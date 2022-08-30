@@ -27,6 +27,11 @@ class MetaWearClean(clean):
             for f in os.listdir(dest):
                 if (f.startswith("libmetawear.so")):
                     os.remove(os.path.join(dest, f))
+        elif (platform.system() == 'Darwin'):
+            for f in os.listdir(dest):
+                if (f.startswith("libmetawear.dylib")):
+                    os.remove(os.path.join(dest, f))
+
 
 class MetaWearBuild(build_py):
     @staticmethod
@@ -35,7 +40,7 @@ class MetaWearBuild(build_py):
             if (f.startswith(basename)):
                 move(os.path.join(src, f), dest)
 
-    def run(self):        
+    def run(self):
         cpp_sdk = os.path.join(root, 'MetaWear-SDK-Cpp')
         system = platform.system()
         dist_dir = os.path.join(cpp_sdk, 'dist', 'release', 'lib', "Win32" if machine == "x86" and system == "Windows" else machine)
@@ -57,6 +62,8 @@ class MetaWearBuild(build_py):
                 raise RuntimeError("Failed to compile C++ SDK")
 
             MetaWearBuild._move(dist_dir, dest, 'libmetawear.so')
+        elif (system == 'Darwin'):
+            print("Not compiling, using prebuilt library")
         else:
             raise RuntimeError("MetaWear Python SDK not supported for '%s'" % platform.system())
 
@@ -76,7 +83,7 @@ setup(
     author='MbientLab',
     author_email="hello@mbientlab.com",
     install_requires=[
-        'warble >= 1.2.8, < 2.0',
+        'warble >= 1.2.8, < 2.0; sys_platform != "darwin"',
         'requests',
         'pyserial'
     ],

@@ -3,7 +3,7 @@ from .cbindings import *
 from collections import deque
 from ctypes import *
 from distutils.version import LooseVersion
-from mbientlab.warble import Gatt
+# from mbientlab.warble import Gatt
 from threading import Event
 from types import SimpleNamespace
 
@@ -110,7 +110,7 @@ class MetaWearUSB(object):
             self._write_disconnect = False
             self._write_poll = True
             self._write_resp_handler = None
-            self._write_resp_event = Event() 
+            self._write_resp_event = Event()
             self._write_thread = threading.Thread(target=self._write_poller, daemon=True)
 
             self._read_thread.start()
@@ -149,7 +149,7 @@ class MetaWearUSB(object):
 
             self.ser.close()
             self.ser = None
-        
+
         if self._disconnect_handler is not None:
             self._disconnect_handler(Const.STATUS_OK)
 
@@ -171,7 +171,7 @@ class MetaWearUSB(object):
         """Async write without response"""
         self._write(cmd_str)
         handler(None)
-    
+
     def service_exists(self, uuid):
         """Checks supported GATT services"""
         if uuid.lower() == MetaWear.GATT_SERVICE or uuid.lower() == MetaWearUSB.GATT_DIS:
@@ -239,7 +239,7 @@ class MetaWearUSB(object):
     def _write_poller(self):
         """Write poller enabling async writes and write response callbacks."""
         while self._write_poll:
-            self._write_resp_event.wait() 
+            self._write_resp_event.wait()
             self._write_resp_event.clear()
             if not self._write_poll:
                 return
@@ -250,7 +250,7 @@ class MetaWearUSB(object):
             if self._write_disconnect:
                 self._write_poll = False
                 self.disconnect()
-        
+
 class MetaWear(object):
     GATT_SERVICE = "326a9000-85cb-9195-d9dd-464cfbbae75a"
     _DEV_INFO = {
@@ -277,8 +277,8 @@ class MetaWear(object):
         args = {}
         if (_is_linux and 'hci_mac' in kwargs):
             args['hci'] = kwargs['hci_mac']
-        self.warble = Gatt(address.upper(), **args)
-        self.conn = self.warble
+        # self.warble = Gatt(address.upper(), **args)
+        # self.conn = self.warble
 
         self.usb = MetaWearUSB(address.upper())
 
@@ -292,7 +292,7 @@ class MetaWear(object):
         self._read_fn= FnVoid_VoidP_VoidP_GattCharP_FnIntVoidPtrArray(self._read_gatt_char)
         self._notify_fn = FnVoid_VoidP_VoidP_GattCharP_FnIntVoidPtrArray_FnVoidVoidPtrInt(self._enable_notifications)
         self._disconnect_fn = FnVoid_VoidP_VoidP_FnVoidVoidPtrInt(self._on_disconnect)
-        self._btle_connection= BtleConnection(write_gatt_char = self._write_fn, read_gatt_char = self._read_fn, 
+        self._btle_connection= BtleConnection(write_gatt_char = self._write_fn, read_gatt_char = self._read_fn,
                 enable_notifications = self._notify_fn, on_disconnect = self._disconnect_fn)
 
         self.board = libmetawear.mbl_mw_metawearboard_create(byref(self._btle_connection))
@@ -329,7 +329,7 @@ class MetaWear(object):
 
     def connect_async(self, handler, **kwargs):
         """
-        Connects to the MetaWear board and initializes the SDK.  You must first connect to the board before using 
+        Connects to the MetaWear board and initializes the SDK.  You must first connect to the board before using
         any of the SDK functions
         @params:
             handler     - Required  : `(BaseException) -> void` function to handle the result of the task
@@ -357,7 +357,7 @@ class MetaWear(object):
                         uuids = self._read_dev_info_state['uuids']
                         if(len(uuids)):
                             next = uuids.popleft()
-                            self._read_dev_info_state['next'] = next                         
+                            self._read_dev_info_state['next'] = next
                             if (MetaWear._DEV_INFO[next] not in self.info):
                                 gatt_char = self.conn.find_characteristic(next)
                                 if (gatt_char == None):
@@ -370,7 +370,7 @@ class MetaWear(object):
                             handler(None)
 
                     def completed(value, error):
-                        if (error == None): 
+                        if (error == None):
                             self.info[MetaWear._DEV_INFO[self._read_dev_info_state['next']]] = bytearray(value).decode('utf8')
                             read_task()
                         else:
@@ -385,8 +385,8 @@ class MetaWear(object):
                     read_task()
 
         if 'firmware' in self.info: del self.info['firmware']
-        
-        self.conn = self.usb if self.usb.is_enumerated else self.warble
+
+        self.conn = self.usb if self.usb.is_enumerated else None
         self.conn.connect_async(completed)
 
     def connect(self, **kwargs):
@@ -413,7 +413,7 @@ class MetaWear(object):
 
         if (gatt_char == None):
             print("gatt char '%s' does not exist" % (uuid))
-            
+
         def completed(value, error):
             if error == None:
                 read_value = bytearray(value)
@@ -424,7 +424,7 @@ class MetaWear(object):
                 print("%s: Error reading gatt char (%s)" % (gatt_char.uuid, error))
 
         gatt_char.read_value_async(completed)
-        
+
     def _write_char_async(self, force):
         count = len(self.write_queue)
         if (count > 0 and (force or count == 1)):
@@ -446,9 +446,9 @@ class MetaWear(object):
         buffer = [value[i] for i in range(0, length)]
 
         self.write_queue.append([gatt_char, buffer, write_type])
-        
+
         self._write_char_async(False)
-        
+
     def _enable_notifications(self, context, caller, ptr_gattchar, handler, ready):
         uuid = _gattchar_to_string(ptr_gattchar.contents)
         gatt_char = self.conn.find_characteristic(uuid)
@@ -520,7 +520,7 @@ class MetaWear(object):
 
         with open(path, "w") as f:
             f.write(json.dumps(state, indent=2))
-        
+
     def deserialize(self):
         """
         Deserialize the cached SDK state
@@ -551,8 +551,8 @@ class MetaWear(object):
 
     def update_firmware_async(self, handler, **kwargs):
         """
-        Updates the firmware on the device.  The function is asynchronous and will update the caller 
-        with the result of the task via a one parameter callback function.  If the parameter is set 
+        Updates the firmware on the device.  The function is asynchronous and will update the caller
+        with the result of the task via a one parameter callback function.  If the parameter is set
         with a BaseException object, then the task failed.
         @params:
             handler             - Required  : `(BaseException) -> void` function to handle the result of the task
@@ -593,7 +593,7 @@ class MetaWear(object):
         try:
             path = self._download_firmware() if 'version' not in kwargs else self._download_firmware(version = kwargs['version'])
             buffer = create_string_buffer(path.encode('ascii'))
-            self._dfu_delegate = DfuDelegate(context = None, on_dfu_started = self._on_started, on_dfu_cancelled = self._on_cancelled, 
+            self._dfu_delegate = DfuDelegate(context = None, on_dfu_started = self._on_started, on_dfu_cancelled = self._on_cancelled,
                     on_transfer_percentage = self._on_transfer, on_successful_file_transferred = self._on_successful, on_error = self._on_error)
             libmetawear.mbl_mw_metawearboard_perform_dfu(self.board, byref(self._dfu_delegate), buffer.raw)
         except ValueError as e:

@@ -8,6 +8,8 @@ if (platform.system() == 'Windows'):
     _so_path = os.path.join(os.path.dirname(__file__), 'MetaWear.Win32.dll')
 elif (platform.system() == 'Linux'):
     _so_path = os.path.join(os.path.dirname(__file__), 'libmetawear.so')
+elif (platform.system() == 'Darwin'):
+    _so_path = os.path.join(os.path.dirname(__file__), 'libmetawear.dylib')
 else:
     raise RuntimeError("MetaWear Python SDK is not supported for '%s'" % platform.system())
 
